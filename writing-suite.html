@@ -1,0 +1,2999 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Writing Suite</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  /* ============================================================
+     DESIGN TOKENS
+     ============================================================ */
+  :root {
+    --paper: #f4ede1;
+    --paper-2: #ebe2d2;
+    --paper-3: #e0d5c0;
+    --ink: #1a1612;
+    --ink-soft: #4a4138;
+    --ink-faint: #8a7e6e;
+    --rule: rgba(26, 22, 18, 0.18);
+    --rule-soft: rgba(26, 22, 18, 0.08);
+
+    --accent-dangerous: #b6361c;        /* red — punitive */
+    --accent-dangerous-deep: #7a1f0c;
+    --accent-whisper: #2d6a4f;          /* green — calm */
+    --accent-whisper-soft: #95d5b2;
+    --accent-corkboard: #b8843e;        /* amber — playful */
+    --accent-corkboard-soft: #e8c990;
+
+    --ok: #2d5a3d;
+
+    /* card/note colours for corkboard */
+    --note-yellow: #fff3a8;
+    --note-pink: #ffd1dc;
+    --note-blue: #b8e0f7;
+    --note-green: #c8e8c8;
+    --note-orange: #ffd9b8;
+    --note-purple: #e0c8f0;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Fraunces", Georgia, serif;
+    font-size: 16px;
+    line-height: 1.5;
+    font-feature-settings: "ss01";
+  }
+
+  body::before {
+    content: "";
+    position: fixed; inset: 0;
+    background-image:
+      radial-gradient(circle at 25% 30%, rgba(26, 22, 18, 0.025) 1px, transparent 1px),
+      radial-gradient(circle at 75% 70%, rgba(26, 22, 18, 0.025) 1px, transparent 1px);
+    background-size: 3px 3px, 5px 5px;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .hidden { display: none !important; }
+
+  /* ============================================================
+     WELCOME SCREEN
+     ============================================================ */
+  #welcome {
+    position: fixed; inset: 0; z-index: 5;
+    display: flex; align-items: center; justify-content: center;
+    padding: 2rem;
+    background: var(--paper);
+  }
+
+  .welcome-inner {
+    width: 100%; max-width: 980px;
+    text-align: center;
+  }
+
+  .welcome-kicker {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 1rem;
+  }
+
+  .welcome-title {
+    font-family: "Fraunces", serif;
+    font-weight: 400;
+    font-size: clamp(2.5rem, 6vw, 4.2rem);
+    line-height: 1.05;
+    letter-spacing: -0.015em;
+    margin-bottom: 0.5rem;
+  }
+  .welcome-title em {
+    font-style: italic;
+    font-weight: 500;
+  }
+
+  .welcome-question {
+    font-family: "Fraunces", serif;
+    font-style: italic;
+    font-size: clamp(1.1rem, 2.4vw, 1.4rem);
+    color: var(--ink-soft);
+    margin-bottom: 3rem;
+  }
+
+  .welcome-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 2rem;
+  }
+
+  .welcome-card {
+    background: var(--paper-2);
+    border: 1.5px solid var(--ink);
+    padding: 2rem 1.5rem;
+    cursor: pointer;
+    text-align: left;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    box-shadow: 4px 4px 0 var(--ink);
+    font-family: inherit;
+    color: inherit;
+    position: relative;
+    overflow: hidden;
+  }
+  .welcome-card:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0 var(--ink);
+  }
+  .welcome-card:active {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0 var(--ink);
+  }
+  .welcome-card .accent-bar {
+    position: absolute; top: 0; left: 0; right: 0; height: 6px;
+  }
+  .welcome-card[data-app="dangerous"] .accent-bar { background: var(--accent-dangerous); }
+  .welcome-card[data-app="whisper"] .accent-bar { background: var(--accent-whisper); }
+  .welcome-card[data-app="corkboard"] .accent-bar { background: var(--accent-corkboard); }
+
+  .welcome-card h3 {
+    font-family: "Fraunces", serif;
+    font-weight: 500;
+    font-size: 1.6rem;
+    line-height: 1.1;
+    margin-top: 0.5rem;
+    margin-bottom: 0.25rem;
+  }
+  .welcome-card h3 em {
+    font-style: italic;
+    font-weight: 400;
+  }
+  .welcome-card .verb {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 0.75rem;
+  }
+  .welcome-card p {
+    font-size: 0.95rem;
+    color: var(--ink-soft);
+    line-height: 1.5;
+  }
+
+  .welcome-foot {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  /* ============================================================
+     SUITE WORKSPACE
+     ============================================================ */
+  #workspace {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    z-index: 2;
+  }
+
+  .suite-bar {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid var(--ink);
+    background: var(--paper-2);
+    flex-shrink: 0;
+  }
+  .suite-brand {
+    font-family: "Fraunces", serif;
+    font-style: italic;
+    font-weight: 500;
+    font-size: 1.05rem;
+    letter-spacing: -0.005em;
+    cursor: pointer;
+  }
+  .suite-brand:hover { color: var(--ink-soft); }
+
+  .app-launcher {
+    display: flex;
+    gap: 0.4rem;
+    margin-left: auto;
+  }
+  .launcher-btn {
+    background: transparent;
+    border: 1px solid var(--ink);
+    padding: 0.4rem 0.75rem;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    cursor: pointer;
+    color: var(--ink);
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .launcher-btn::before {
+    content: "";
+    display: inline-block;
+    width: 8px; height: 8px;
+    border: 1px solid var(--ink);
+    background: var(--paper);
+  }
+  .launcher-btn[data-app="dangerous"]::before { background: var(--accent-dangerous); }
+  .launcher-btn[data-app="whisper"]::before { background: var(--accent-whisper); }
+  .launcher-btn[data-app="corkboard"]::before { background: var(--accent-corkboard); }
+  .launcher-btn:hover { background: var(--paper); }
+  .launcher-btn.active {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .launcher-btn.active::before {
+    border-color: var(--paper);
+  }
+
+  /* ============================================================
+     PANE LAYOUT
+     ============================================================ */
+  #panes-row {
+    flex: 1;
+    display: flex;
+    overflow: auto;
+    min-height: 0;
+  }
+
+  .pane {
+    flex: 1 1 0;
+    min-width: 320px;
+    display: flex;
+    flex-direction: column;
+    background: var(--paper);
+    overflow: hidden;
+    position: relative;
+  }
+  .pane + .pane {
+    border-left: 1px solid var(--ink);
+  }
+
+  .splitter {
+    flex: 0 0 6px;
+    background: var(--paper-2);
+    cursor: col-resize;
+    position: relative;
+    border-left: 1px solid var(--ink);
+    border-right: 1px solid var(--ink);
+    transition: background 0.15s ease;
+  }
+  .splitter:hover, .splitter.dragging {
+    background: var(--ink);
+  }
+  .splitter::after {
+    content: "";
+    position: absolute;
+    left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    width: 2px;
+    height: 32px;
+    background: var(--ink-faint);
+  }
+  .splitter:hover::after, .splitter.dragging::after {
+    background: var(--paper);
+  }
+
+  .pane-header {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem 0.85rem;
+    border-bottom: 1px solid var(--rule);
+    flex-shrink: 0;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    background: var(--paper-2);
+  }
+  .pane-header .app-dot {
+    width: 8px; height: 8px;
+    border: 1px solid var(--ink);
+  }
+  .pane[data-app="dangerous"] .app-dot { background: var(--accent-dangerous); }
+  .pane[data-app="whisper"] .app-dot { background: var(--accent-whisper); }
+  .pane[data-app="corkboard"] .app-dot { background: var(--accent-corkboard); }
+  .pane-header .pane-title {
+    flex: 1;
+  }
+  .pane-header button {
+    background: transparent;
+    border: none;
+    color: var(--ink-soft);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 1rem;
+    line-height: 1;
+    padding: 0.15rem 0.4rem;
+  }
+  .pane-header button:hover { color: var(--accent-dangerous); }
+
+  .pane-body {
+    flex: 1;
+    overflow: auto;
+    position: relative;
+    min-height: 0;
+  }
+
+  /* ============================================================
+     CUSTOM CONFIRM (works inside iframes / sandboxed contexts)
+     ============================================================ */
+  .confirm-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background: rgba(26, 22, 18, 0.7);
+    backdrop-filter: blur(2px);
+  }
+  .confirm-card {
+    width: 100%;
+    max-width: 420px;
+    background: var(--paper-2);
+    border: 1.5px solid var(--ink);
+    box-shadow: 6px 6px 0 var(--ink);
+    padding: 2rem 1.75rem 1.5rem;
+    text-align: center;
+  }
+  .confirm-msg {
+    font-family: "Fraunces", serif;
+    font-size: 1.1rem;
+    line-height: 1.4;
+    color: var(--ink);
+    margin-bottom: 1.5rem;
+  }
+  .confirm-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+  .confirm-actions button {
+    flex: 1;
+    padding: 0.7rem;
+    border: 1px solid var(--ink);
+    background: transparent;
+    color: var(--ink);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.12s ease;
+  }
+  .confirm-actions button:hover { background: var(--paper); }
+  .confirm-actions button.danger {
+    background: var(--accent-dangerous);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+  .confirm-actions button.danger:hover { background: var(--accent-dangerous-deep); }
+
+  /* ============================================================
+     DANGEROUS WRITING (.dw-)
+     ============================================================ */
+  .dw-root {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  .dw-setup {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    overflow: auto;
+  }
+  .dw-setup-card {
+    width: 100%;
+    max-width: 460px;
+    border: 1.5px solid var(--ink);
+    background: var(--paper-2);
+    padding: 1.75rem 1.75rem 1.5rem;
+    box-shadow: 6px 6px 0 var(--ink);
+  }
+  .dw-masthead {
+    text-align: center;
+    border-bottom: 1px solid var(--ink);
+    padding-bottom: 0.85rem;
+    margin-bottom: 1.25rem;
+  }
+  .dw-kicker {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 0.4rem;
+  }
+  .dw-title {
+    font-family: "Fraunces", serif;
+    font-size: 1.7rem;
+    font-weight: 500;
+    font-style: italic;
+    line-height: 1;
+    letter-spacing: -0.01em;
+  }
+  .dw-title em { font-style: normal; }
+  .dw-subtitle {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent-dangerous);
+    margin-top: 0.5rem;
+  }
+  .dw-field { margin-bottom: 1rem; }
+  .dw-field-label {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 0.45rem;
+  }
+  .dw-field-label::before {
+    content: "§";
+    font-family: "Fraunces", serif;
+    font-size: 0.9rem;
+    color: var(--accent-dangerous);
+  }
+  .dw-toggle-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border: 1px solid var(--ink);
+  }
+  .dw-toggle-row button {
+    background: var(--paper-2);
+    border: none;
+    padding: 0.65rem 0.5rem;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    cursor: pointer;
+    color: var(--ink);
+  }
+  .dw-toggle-row button + button { border-left: 1px solid var(--ink); }
+  .dw-toggle-row button.active {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .dw-toggle-row button:not(.active):hover { background: var(--paper); }
+  .dw-preset-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  .dw-preset {
+    flex: 1 1 auto;
+    min-width: 50px;
+    padding: 0.5rem 0.4rem;
+    background: transparent;
+    border: 1px solid var(--ink);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.7rem;
+    cursor: pointer;
+    color: var(--ink);
+  }
+  .dw-preset:hover { background: var(--paper); }
+  .dw-preset.active {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .dw-custom {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: 0.5rem;
+  }
+  .dw-custom input {
+    flex: 1;
+    padding: 0.5rem 0.65rem;
+    border: 1px solid var(--ink);
+    background: var(--paper);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.85rem;
+    color: var(--ink);
+    outline: none;
+  }
+  .dw-custom span {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .dw-start-btn {
+    width: 100%;
+    margin-top: 0.5rem;
+    padding: 0.95rem;
+    background: var(--accent-dangerous);
+    color: var(--paper);
+    border: 1.5px solid var(--ink);
+    font-family: "Fraunces", serif;
+    font-size: 1.2rem;
+    font-style: italic;
+    cursor: pointer;
+    box-shadow: 4px 4px 0 var(--ink);
+    transition: all 0.1s ease;
+  }
+  .dw-start-btn:hover {
+    background: var(--accent-dangerous-deep);
+    transform: translate(-1px, -1px);
+    box-shadow: 5px 5px 0 var(--ink);
+  }
+  .dw-start-btn:active {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0 var(--ink);
+  }
+  .dw-foot {
+    margin-top: 1rem;
+    text-align: center;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.55rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+
+  /* writing screen */
+  .dw-writing {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 0.85rem 1.25rem 0;
+    position: relative;
+  }
+  .dw-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--ink);
+    margin-bottom: 0.65rem;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    flex-wrap: wrap;
+  }
+  .dw-topbar .left { color: var(--ink-soft); }
+  .dw-topbar .center {
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+  }
+  .dw-topbar .right {
+    display: flex;
+    gap: 0.7rem;
+  }
+  .dw-topbar .right button {
+    background: none;
+    border: none;
+    color: var(--ink-soft);
+    font-family: inherit;
+    font-size: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+    cursor: pointer;
+    padding: 0;
+  }
+  .dw-topbar .right button:hover { color: var(--accent-dangerous); }
+  .dw-topbar .right button.dw-disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    pointer-events: none;
+    text-decoration: line-through;
+    text-decoration-thickness: 1px;
+  }
+  .dw-topbar .right button.copied-flash { color: var(--ok) !important; }
+
+  .dw-progress-track {
+    height: 2px;
+    background: rgba(26, 22, 18, 0.1);
+    margin-bottom: 0.85rem;
+  }
+  .dw-progress-fill {
+    height: 100%;
+    background: var(--ink);
+    width: 0%;
+    transition: width 0.3s linear;
+  }
+  .dw-progress-track.safe {
+    background: transparent;
+    border-top: 1px dashed rgba(26, 22, 18, 0.25);
+    height: auto;
+    padding: 0.3rem 0;
+    text-align: center;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.55rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--ok);
+  }
+  .dw-progress-track.safe .dw-progress-fill { display: none; }
+  .dw-progress-track.safe::after { content: "✓  saved  ·  free writing"; }
+
+  .dw-editor-wrap {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    overflow-y: auto;
+    padding-bottom: 2rem;
+  }
+  .dw-editor {
+    width: 100%;
+    max-width: 680px;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--ink);
+    font-family: "Fraunces", serif;
+    font-size: 1.1rem;
+    line-height: 1.7;
+    resize: none;
+    padding: 0;
+    transition: opacity 0.4s ease, color 0.4s ease;
+  }
+  .dw-editor::placeholder {
+    color: var(--ink-soft);
+    font-style: italic;
+    opacity: 0.5;
+  }
+  .dw-editor.hardcore { filter: blur(5px); }
+  .dw-editor.hardcore:focus { filter: blur(5px); }
+
+  /* danger fade — scoped to pane, not body */
+  .pane.dw-danger-1 { background: #f0d9c8; }
+  .pane.dw-danger-2 { background: #e8b095; }
+  .pane.dw-danger-3 { background: #d97a5a; }
+  .pane.dw-danger-4 { background: var(--accent-dangerous); }
+  .pane.dw-danger-4 .dw-editor { color: rgba(244, 237, 225, 0.85); }
+  .pane.dw-danger-4 .dw-topbar,
+  .pane.dw-danger-4 .dw-topbar .left,
+  .pane.dw-danger-4 .dw-topbar .right button,
+  .pane.dw-danger-4 .dw-topbar .center { color: rgba(244, 237, 225, 0.85); }
+  .pane.dw-danger-4 .dw-progress-track { background: rgba(244, 237, 225, 0.2); }
+  .pane.dw-danger-4 .dw-progress-fill { background: var(--paper); }
+  .pane.dw-danger-1, .pane.dw-danger-2, .pane.dw-danger-3, .pane.dw-danger-4 {
+    transition: background-color 0.3s ease;
+  }
+
+  /* end-of-session overlays — scoped to the pane, not the page */
+  .dw-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    background: rgba(26, 22, 18, 0.92);
+    color: var(--paper);
+  }
+  .dw-overlay-card {
+    width: 100%;
+    max-width: 420px;
+    text-align: center;
+    border: 1px solid var(--paper);
+    padding: 2rem 1.5rem;
+    background: var(--ink);
+  }
+  .dw-overlay-kicker {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+    color: rgba(244, 237, 225, 0.6);
+  }
+  .dw-overlay-title {
+    font-family: "Fraunces", serif;
+    font-size: 2.4rem;
+    font-style: italic;
+    line-height: 1;
+    margin-bottom: 1rem;
+  }
+  .dw-fail .dw-overlay-title { color: #ff6b4a; }
+  .dw-win .dw-overlay-title { color: #a8d4b8; }
+  .dw-overlay-body {
+    font-family: "Fraunces", serif;
+    font-size: 1rem;
+    line-height: 1.5;
+    margin-bottom: 1.5rem;
+    color: rgba(244, 237, 225, 0.85);
+  }
+  .dw-overlay-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .dw-overlay-actions button {
+    padding: 0.75rem;
+    background: transparent;
+    border: 1px solid var(--paper);
+    color: var(--paper);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .dw-overlay-actions button:hover {
+    background: var(--paper);
+    color: var(--ink);
+  }
+  .dw-overlay-actions button.primary {
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  /* ============================================================
+     WHISPER (.wh-)
+     ============================================================ */
+  .wh-root {
+    height: 100%;
+    overflow-y: auto;
+    padding: 1.25rem 1.5rem 2rem;
+  }
+
+  .wh-header-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    border-bottom: 1px solid var(--ink);
+    padding-bottom: 0.85rem;
+    margin-bottom: 1.1rem;
+  }
+  .wh-brand h2 {
+    font-family: "Fraunces", serif;
+    font-weight: 500;
+    font-size: 1.6rem;
+    line-height: 1;
+    letter-spacing: -0.01em;
+  }
+  .wh-brand h2 em {
+    font-style: italic;
+    font-weight: 400;
+    color: var(--accent-whisper);
+  }
+  .wh-brand .tag {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-top: 0.35rem;
+  }
+  .wh-status-pill {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    border: 1px solid var(--rule);
+    padding: 0.35rem 0.6rem;
+    background: var(--paper-2);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .wh-status-pill .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--ink-soft);
+  }
+  .wh-status-pill.ready .dot { background: var(--accent-whisper); }
+  .wh-status-pill.loading .dot { background: var(--accent-corkboard); animation: whPulse 1.2s infinite; }
+  .wh-status-pill.error .dot { background: var(--accent-dangerous); }
+  @keyframes whPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  .wh-control-card {
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    padding: 1rem;
+    margin-bottom: 1rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.85rem 1.25rem;
+  }
+  .wh-field .label {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 0.4rem;
+  }
+  .wh-field select, .wh-field input[type="text"] {
+    width: 100%;
+    padding: 0.5rem 0.6rem;
+    border: 1px solid var(--ink);
+    background: var(--paper);
+    font-family: "Fraunces", serif;
+    font-size: 0.9rem;
+    color: var(--ink);
+    outline: none;
+  }
+  .wh-field .hint {
+    font-size: 0.7rem;
+    font-style: italic;
+    color: var(--ink-soft);
+    margin-top: 0.3rem;
+  }
+  .wh-load-bar {
+    grid-column: 1 / -1;
+    border: 1px solid var(--rule);
+    background: var(--paper);
+    height: 22px;
+    position: relative;
+    overflow: hidden;
+  }
+  .wh-load-bar.hidden { display: none; }
+  .wh-load-bar-fill {
+    position: absolute; top: 0; left: 0; bottom: 0;
+    background: var(--accent-whisper-soft);
+    width: 0%;
+    transition: width 0.2s ease;
+  }
+  .wh-load-bar-text {
+    position: relative;
+    z-index: 1;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--ink);
+    text-align: center;
+    line-height: 22px;
+  }
+
+  .wh-record-zone {
+    background: #fff;
+    border: 1px solid var(--ink);
+    padding: 1.5rem 1.25rem;
+    text-align: center;
+    margin-bottom: 1rem;
+    position: relative;
+  }
+  .wh-record-zone::before {
+    content: "";
+    position: absolute;
+    top: 6px; left: 6px; right: 6px; bottom: 6px;
+    border: 1px dashed var(--rule);
+    pointer-events: none;
+  }
+  .wh-rec-btn {
+    width: 78px; height: 78px;
+    border-radius: 50%;
+    border: 2px solid var(--ink);
+    background: var(--paper-2);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center; justify-content: center;
+    transition: transform 0.15s ease, background 0.2s ease, box-shadow 0.15s ease;
+    position: relative;
+    box-shadow: 0 4px 0 var(--ink);
+  }
+  .wh-rec-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 var(--ink);
+  }
+  .wh-rec-btn:active:not(:disabled) {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 var(--ink);
+  }
+  .wh-rec-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .wh-rec-btn .icon {
+    width: 24px; height: 24px;
+    background: var(--accent-dangerous);
+    border-radius: 50%;
+    transition: all 0.2s ease;
+  }
+  .wh-rec-btn.recording { background: #ffe5e5; }
+  .wh-rec-btn.recording .icon {
+    border-radius: 4px;
+    width: 18px; height: 18px;
+  }
+  .wh-rec-btn.recording {
+    animation: whRecPulse 1.6s infinite;
+  }
+  @keyframes whRecPulse {
+    0%, 100% { box-shadow: 0 4px 0 var(--ink), 0 0 0 0 rgba(214, 40, 40, 0.4); }
+    50% { box-shadow: 0 4px 0 var(--ink), 0 0 0 14px rgba(214, 40, 40, 0); }
+  }
+  .wh-rec-label {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-top: 0.85rem;
+  }
+  .wh-rec-timer {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 1.3rem;
+    font-variant-numeric: tabular-nums;
+    margin-top: 0.4rem;
+    color: var(--ink);
+  }
+  .wh-meter {
+    display: flex; justify-content: center; gap: 3px;
+    height: 22px; margin-top: 0.85rem; align-items: center;
+  }
+  .wh-meter .bar {
+    width: 3px;
+    background: var(--accent-whisper);
+    height: 4px;
+    transition: height 0.08s ease-out;
+    border-radius: 2px;
+  }
+
+  .wh-transcript-wrap {
+    background: #fff;
+    border: 1px solid var(--ink);
+    padding: 1.25rem;
+  }
+  .wh-transcript-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.85rem;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .wh-transcript {
+    font-family: "Fraunces", serif;
+    font-size: 1rem;
+    line-height: 1.65;
+    min-height: 100px;
+    white-space: pre-wrap;
+    color: var(--ink);
+    outline: none;
+  }
+  .wh-transcript.empty::before {
+    content: "Your transcript will appear here once you stop recording.";
+    color: var(--ink-soft);
+    font-style: italic;
+  }
+  .wh-transcript.transcribing::after {
+    content: " ▌";
+    color: var(--accent-whisper);
+    animation: whBlink 1s infinite;
+  }
+  @keyframes whBlink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
+  .wh-transcript-actions {
+    margin-top: 1rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--rule);
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .wh-action {
+    padding: 0.45rem 0.8rem;
+    background: transparent;
+    border: 1px solid var(--ink);
+    color: var(--ink);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .wh-action:hover:not(:disabled) {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .wh-action:disabled { opacity: 0.35; cursor: not-allowed; text-decoration: line-through; }
+  .wh-action.primary {
+    background: var(--accent-whisper);
+    color: #fff;
+    border-color: var(--accent-whisper);
+  }
+  .wh-action.primary:hover:not(:disabled) { background: #1f4d3a; }
+
+  .wh-err-banner {
+    background: #fdecec;
+    border: 1px solid var(--accent-dangerous);
+    padding: 0.6rem 0.85rem;
+    margin-bottom: 1rem;
+    font-size: 0.85rem;
+    color: #7a1818;
+  }
+  .wh-err-banner.hidden { display: none; }
+
+  /* ============================================================
+     CORKBOARD (.cb-)
+     ============================================================ */
+  .cb-root {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    background: #d9c8a4;  /* cork colour */
+    background-image:
+      radial-gradient(circle at 20% 30%, rgba(120, 90, 50, 0.15) 1.5px, transparent 1.5px),
+      radial-gradient(circle at 80% 70%, rgba(120, 90, 50, 0.12) 1px, transparent 1px),
+      radial-gradient(circle at 50% 50%, rgba(120, 90, 50, 0.1) 0.8px, transparent 0.8px);
+    background-size: 8px 8px, 13px 13px, 5px 5px;
+  }
+
+  .cb-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.55rem 0.85rem;
+    background: var(--paper-2);
+    border-bottom: 1px solid var(--ink);
+    flex-wrap: wrap;
+    flex-shrink: 0;
+  }
+  .cb-toolbar select, .cb-toolbar button {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    background: var(--paper);
+    border: 1px solid var(--ink);
+    color: var(--ink);
+    padding: 0.35rem 0.6rem;
+    cursor: pointer;
+  }
+  .cb-toolbar select { padding: 0.3rem 0.4rem; }
+  .cb-toolbar button:hover { background: var(--paper-3); }
+  .cb-toolbar button.active {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .cb-toolbar .spacer { flex: 1; }
+  .cb-toolbar .label-inline {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+
+  .cb-stage {
+    flex: 1;
+    position: relative;
+    overflow: auto;
+    cursor: crosshair;
+  }
+  .cb-board {
+    position: relative;
+    width: 2400px;
+    height: 1600px;
+    /* lanes drawn here */
+  }
+
+  /* lane overlay */
+  .cb-lanes {
+    position: absolute; inset: 0;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+  }
+  .cb-lane {
+    flex: 1;
+    border-bottom: 2px dashed rgba(60, 40, 20, 0.35);
+    position: relative;
+    padding: 0.4rem 0.85rem;
+  }
+  .cb-lane:last-child { border-bottom: none; }
+  .cb-lane-label {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(60, 40, 20, 0.7);
+    background: rgba(244, 237, 225, 0.7);
+    padding: 0.2rem 0.45rem;
+    display: inline-block;
+    border: 1px solid rgba(60, 40, 20, 0.3);
+  }
+  .cb-lanes.hidden { display: none; }
+
+  /* card */
+  .cb-card {
+    position: absolute;
+    min-width: 140px;
+    max-width: 280px;
+    min-height: 60px;
+    padding: 0.7rem 0.85rem 0.85rem;
+    background: var(--note-yellow);
+    border: 1px solid rgba(0,0,0,0.15);
+    box-shadow:
+      0 1px 0 rgba(0,0,0,0.1),
+      0 6px 12px rgba(0,0,0,0.15),
+      0 12px 24px rgba(0,0,0,0.08);
+    cursor: grab;
+    user-select: none;
+    transform-origin: center;
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+    font-family: "Fraunces", serif;
+    font-size: 0.92rem;
+    line-height: 1.4;
+    color: #1a1612;
+  }
+  .cb-card:hover {
+    box-shadow:
+      0 1px 0 rgba(0,0,0,0.1),
+      0 8px 18px rgba(0,0,0,0.2),
+      0 16px 32px rgba(0,0,0,0.1);
+    z-index: 10;
+  }
+  .cb-card.dragging {
+    cursor: grabbing;
+    z-index: 100;
+    transform: rotate(1deg) scale(1.03);
+  }
+  .cb-card[data-color="yellow"] { background: var(--note-yellow); }
+  .cb-card[data-color="pink"] { background: var(--note-pink); }
+  .cb-card[data-color="blue"] { background: var(--note-blue); }
+  .cb-card[data-color="green"] { background: var(--note-green); }
+  .cb-card[data-color="orange"] { background: var(--note-orange); }
+  .cb-card[data-color="purple"] { background: var(--note-purple); }
+
+  /* pin in corner */
+  .cb-card::before {
+    content: "";
+    position: absolute;
+    top: 6px; left: 50%;
+    transform: translateX(-50%);
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #d04545, #7a1818);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.4);
+  }
+
+  .cb-card-text {
+    margin-top: 0.55rem;
+    outline: none;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    cursor: text;
+    min-height: 1.4em;
+  }
+  .cb-card-text:focus {
+    background: rgba(255, 255, 255, 0.4);
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.2);
+  }
+  .cb-card-text.empty:not(:focus)::before {
+    content: "double-click to write…";
+    color: rgba(0, 0, 0, 0.35);
+    font-style: italic;
+  }
+
+  .cb-card-toolbar {
+    position: absolute;
+    top: 6px; right: 6px;
+    display: none;
+    gap: 0.2rem;
+  }
+  .cb-card:hover .cb-card-toolbar { display: flex; }
+  .cb-card-toolbar button {
+    width: 18px; height: 18px;
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(0,0,0,0.2);
+    cursor: pointer;
+    font-size: 0.7rem;
+    line-height: 1;
+    padding: 0;
+    color: #1a1612;
+  }
+  .cb-card-toolbar button:hover { background: rgba(255, 255, 255, 1); }
+
+  /* color picker */
+  .cb-color-picker {
+    position: absolute;
+    top: 28px; right: 6px;
+    display: none;
+    flex-direction: column;
+    gap: 3px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0,0,0,0.2);
+    padding: 4px;
+    z-index: 20;
+  }
+  .cb-card.color-open .cb-color-picker { display: flex; }
+  .cb-color-swatch {
+    width: 16px; height: 16px;
+    border: 1px solid rgba(0,0,0,0.25);
+    cursor: pointer;
+  }
+
+  /* sidebar reference */
+  .cb-sidebar {
+    position: absolute;
+    top: 0; right: 0;
+    width: 240px;
+    height: 100%;
+    background: var(--paper-2);
+    border-left: 1px solid var(--ink);
+    overflow-y: auto;
+    padding: 0.85rem 1rem;
+    z-index: 30;
+    box-shadow: -4px 0 12px rgba(0,0,0,0.05);
+  }
+  .cb-sidebar.hidden { display: none; }
+  .cb-sidebar h4 {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 0.65rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--rule);
+  }
+  .cb-sidebar .beat {
+    font-family: "Fraunces", serif;
+    font-size: 0.9rem;
+    line-height: 1.35;
+    padding: 0.5rem 0;
+    border-bottom: 1px dashed var(--rule);
+    color: var(--ink);
+  }
+  .cb-sidebar .beat:last-child { border-bottom: none; }
+  .cb-sidebar .beat .num {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.65rem;
+    color: var(--ink-faint);
+    margin-right: 0.4rem;
+    font-weight: 600;
+  }
+  .cb-sidebar .beat .name {
+    font-style: italic;
+    font-weight: 500;
+  }
+  .cb-sidebar .beat .desc {
+    display: block;
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+    font-style: normal;
+    margin-top: 0.15rem;
+  }
+
+  /* custom-structure modal */
+  .cb-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 250;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    background: rgba(26, 22, 18, 0.7);
+    backdrop-filter: blur(2px);
+  }
+  .cb-modal-card {
+    width: 100%;
+    max-width: 520px;
+    background: var(--paper-2);
+    border: 1.5px solid var(--ink);
+    box-shadow: 6px 6px 0 var(--ink);
+    padding: 1.5rem;
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+  .cb-modal-card h3 {
+    font-family: "Fraunces", serif;
+    font-style: italic;
+    font-weight: 500;
+    font-size: 1.4rem;
+    margin-bottom: 1rem;
+  }
+  .cb-modal-card .form-row {
+    margin-bottom: 0.85rem;
+  }
+  .cb-modal-card label {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    display: block;
+    margin-bottom: 0.35rem;
+  }
+  .cb-modal-card input[type="text"], .cb-modal-card textarea {
+    width: 100%;
+    padding: 0.55rem 0.7rem;
+    border: 1px solid var(--ink);
+    background: var(--paper);
+    font-family: "Fraunces", serif;
+    font-size: 0.95rem;
+    color: var(--ink);
+    outline: none;
+  }
+  .cb-modal-card textarea {
+    min-height: 200px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    resize: vertical;
+  }
+  .cb-modal-card .hint {
+    font-size: 0.78rem;
+    font-style: italic;
+    color: var(--ink-soft);
+    margin-top: 0.3rem;
+  }
+  .cb-modal-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+  .cb-modal-actions button {
+    flex: 1;
+    padding: 0.65rem;
+    border: 1px solid var(--ink);
+    background: transparent;
+    color: var(--ink);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .cb-modal-actions button.primary {
+    background: var(--accent-corkboard);
+    color: #fff;
+    border-color: var(--ink);
+  }
+  .cb-modal-actions button:hover { opacity: 0.85; }
+
+  /* mobile fallback for narrow screens */
+  @media (max-width: 720px) {
+    #panes-row { flex-direction: column; }
+    .pane + .pane { border-left: none; border-top: 1px solid var(--ink); }
+    .splitter { display: none; }
+    .pane { min-height: 50vh; }
+    .suite-bar { flex-wrap: wrap; }
+    .app-launcher { width: 100%; }
+    .welcome-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ================== WELCOME ================== -->
+<div id="welcome">
+  <div class="welcome-inner">
+    <div class="welcome-kicker">— Writing Suite — Vol. I — </div>
+    <h1 class="welcome-title">A place to <em>think</em>, <em>speak</em>, and <em>write</em>.</h1>
+    <p class="welcome-question">Where would you like to start today?</p>
+
+    <div class="welcome-grid">
+      <button class="welcome-card" data-app="dangerous">
+        <div class="accent-bar"></div>
+        <div class="verb">Type</div>
+        <h3>The <em>Dangerous</em><br/>Writing App</h3>
+        <p>Set a goal. Don't stop typing. If you pause, your work disappears. For breaking through hesitation.</p>
+      </button>
+      <button class="welcome-card" data-app="whisper">
+        <div class="accent-bar"></div>
+        <div class="verb">Talk</div>
+        <h3>Voice<br/><em>Composer</em></h3>
+        <p>Speak your draft aloud, transcribed on your device — no internet, no upload. For thoughts faster than fingers.</p>
+      </button>
+      <button class="welcome-card" data-app="corkboard">
+        <div class="accent-bar"></div>
+        <div class="verb">Arrange</div>
+        <h3>The <em>Corkboard</em></h3>
+        <p>Pin fragments, rearrange ideas, lay them over Save the Cat or your own structure. A low-stakes thinking space.</p>
+      </button>
+    </div>
+
+    <div class="welcome-foot">All three can run side-by-side. The corkboard remembers your work.</div>
+  </div>
+</div>
+
+<!-- ================== WORKSPACE ================== -->
+<div id="workspace" class="hidden">
+  <header class="suite-bar">
+    <div class="suite-brand" id="brandBtn" title="Return to welcome screen">Writing Suite</div>
+    <div class="app-launcher">
+      <button class="launcher-btn" data-app="dangerous">Type</button>
+      <button class="launcher-btn" data-app="whisper">Talk</button>
+      <button class="launcher-btn" data-app="corkboard">Arrange</button>
+    </div>
+  </header>
+  <div id="panes-row"></div>
+</div>
+
+<!-- ================== APP TEMPLATES ================== -->
+
+<template id="paneTemplate">
+  <div class="pane">
+    <div class="pane-header">
+      <span class="app-dot"></span>
+      <span class="pane-title">App</span>
+      <button class="close-btn" title="Close pane">✕</button>
+    </div>
+    <div class="pane-body"></div>
+  </div>
+</template>
+
+<template id="dangerousTemplate">
+  <div class="dw-root">
+    <div class="dw-setup">
+      <div class="dw-setup-card">
+        <header class="dw-masthead">
+          <div class="dw-kicker">Vol. I · No. 1 · Est. Now</div>
+          <h2 class="dw-title">The Most <em>Dangerous</em> Writing App</h2>
+          <div class="dw-subtitle">don't stop · or all is lost</div>
+        </header>
+
+        <div class="dw-field">
+          <div class="dw-field-label">Goal Type</div>
+          <div class="dw-toggle-row dw-goal-toggle">
+            <button class="active" data-mode="time">By Time</button>
+            <button data-mode="words">By Words</button>
+          </div>
+        </div>
+
+        <div class="dw-field dw-time-field">
+          <div class="dw-field-label">Duration</div>
+          <div class="dw-preset-row dw-time-presets">
+            <button class="dw-preset" data-val="3">3 min</button>
+            <button class="dw-preset active" data-val="5">5 min</button>
+            <button class="dw-preset" data-val="10">10 min</button>
+            <button class="dw-preset" data-val="15">15 min</button>
+            <button class="dw-preset" data-val="30">30 min</button>
+          </div>
+          <div class="dw-custom">
+            <input type="number" class="dw-time-custom" min="1" max="180" placeholder="custom" />
+            <span>minutes</span>
+          </div>
+        </div>
+
+        <div class="dw-field dw-words-field hidden">
+          <div class="dw-field-label">Word Count</div>
+          <div class="dw-preset-row dw-word-presets">
+            <button class="dw-preset" data-val="100">100</button>
+            <button class="dw-preset active" data-val="250">250</button>
+            <button class="dw-preset" data-val="500">500</button>
+            <button class="dw-preset" data-val="1000">1000</button>
+            <button class="dw-preset" data-val="1667">1667</button>
+          </div>
+          <div class="dw-custom">
+            <input type="number" class="dw-word-custom" min="10" max="50000" placeholder="custom" />
+            <span>words</span>
+          </div>
+        </div>
+
+        <div class="dw-field">
+          <div class="dw-field-label">Mode</div>
+          <div class="dw-toggle-row dw-mode-toggle">
+            <button class="active" data-mode="normal">Normal</button>
+            <button data-mode="hardcore">Hardcore (blur)</button>
+          </div>
+        </div>
+
+        <button class="dw-start-btn">Begin Writing →</button>
+        <div class="dw-foot">Pause &gt; 5s · everything vanishes · save by reaching the goal</div>
+      </div>
+    </div>
+
+    <div class="dw-writing hidden">
+      <div class="dw-topbar">
+        <div class="left dw-goal-label">— TIME · 5 MIN —</div>
+        <div class="center dw-status-line">00:00 · 0 words</div>
+        <div class="right">
+          <button class="dw-copy-btn dw-disabled" title="Copy text">Copy</button>
+          <button class="dw-download-btn dw-disabled" title="Download as .txt">Download</button>
+          <button class="dw-quit-btn">Quit</button>
+        </div>
+      </div>
+      <div class="dw-progress-track"><div class="dw-progress-fill"></div></div>
+      <div class="dw-editor-wrap">
+        <textarea class="dw-editor" placeholder="Start typing. Don't stop." spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
+      </div>
+    </div>
+
+    <div class="dw-overlay dw-fail-overlay hidden">
+      <div class="dw-overlay-card dw-fail">
+        <div class="dw-overlay-kicker">— Notice of Failure —</div>
+        <h3 class="dw-overlay-title">You stopped.</h3>
+        <p class="dw-overlay-body">Your words have been erased.<br/>Such is the agreement.</p>
+        <div class="dw-overlay-actions">
+          <button class="primary dw-fail-retry">Try Again</button>
+          <button class="dw-fail-home">New Session</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="dw-overlay dw-win-overlay hidden">
+      <div class="dw-overlay-card dw-win">
+        <div class="dw-overlay-kicker">— You Survived —</div>
+        <h3 class="dw-overlay-title">Saved.</h3>
+        <p class="dw-overlay-body dw-win-summary">Your work is yours.</p>
+        <div class="dw-overlay-actions">
+          <button class="primary dw-keep-writing">Keep Writing →</button>
+          <button class="dw-win-home">New Session</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<template id="whisperTemplate">
+  <div class="wh-root">
+    <div class="wh-header-row">
+      <div class="wh-brand">
+        <h2>Voice <em>Composer</em></h2>
+        <div class="tag">runs offline · stays on your device</div>
+      </div>
+      <div class="wh-status-pill">
+        <span class="dot"></span>
+        <span class="wh-status-text">model not loaded</span>
+      </div>
+    </div>
+
+    <div class="wh-err-banner hidden"></div>
+
+    <section class="wh-control-card">
+      <div class="wh-field">
+        <div class="label">Model</div>
+        <select class="wh-model-select">
+          <option value="Xenova/whisper-tiny.en" selected>Tiny English (~75 MB)</option>
+          <option value="Xenova/whisper-base.en">Base English (~145 MB)</option>
+          <option value="Xenova/whisper-small.en">Small English (~470 MB)</option>
+        </select>
+        <div class="hint">First load downloads & caches.</div>
+      </div>
+      <div class="wh-field">
+        <div class="label">Speaker name</div>
+        <input type="text" class="wh-speaker-name" placeholder="e.g. Maya R." maxlength="40" />
+        <div class="hint">Saved into download filename.</div>
+      </div>
+      <div class="wh-load-bar hidden">
+        <div class="wh-load-bar-fill"></div>
+        <div class="wh-load-bar-text">downloading…</div>
+      </div>
+    </section>
+
+    <section class="wh-record-zone">
+      <button class="wh-rec-btn" disabled aria-label="Record">
+        <span class="icon"></span>
+      </button>
+      <div class="wh-rec-label">click to load model & start</div>
+      <div class="wh-rec-timer">00:00</div>
+      <div class="wh-meter" aria-hidden="true">
+        <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+        <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+        <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+        <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+      </div>
+    </section>
+
+    <section class="wh-transcript-wrap">
+      <div class="wh-transcript-header">
+        <span>Transcript</span>
+        <span class="wh-trans-stats">— · 0 words</span>
+      </div>
+      <div class="wh-transcript empty" contenteditable="false"></div>
+      <div class="wh-transcript-actions">
+        <button class="wh-action wh-edit-toggle" disabled>Edit</button>
+        <button class="wh-action wh-copy-btn" disabled>Copy</button>
+        <button class="wh-action primary wh-download-btn" disabled>Download .txt</button>
+        <button class="wh-action wh-clear-btn" disabled>Clear</button>
+      </div>
+    </section>
+  </div>
+</template>
+
+<template id="corkboardTemplate">
+  <div class="cb-root">
+    <div class="cb-toolbar">
+      <button class="cb-add-card" title="Add a card">+ Card</button>
+
+      <span class="label-inline">Structure:</span>
+      <select class="cb-structure-select"></select>
+
+      <button class="cb-toggle-lanes" title="Show acts/beats overlaid on the board">Lanes</button>
+      <button class="cb-toggle-sidebar" title="Show structure as a reference panel">Reference</button>
+
+      <span class="spacer"></span>
+
+      <span class="label-inline cb-card-count">0 cards</span>
+      <button class="cb-clear" title="Remove all cards">Clear</button>
+    </div>
+
+    <div class="cb-stage">
+      <div class="cb-board">
+        <div class="cb-lanes hidden"></div>
+        <!-- cards inserted here -->
+      </div>
+      <div class="cb-sidebar hidden">
+        <h4>Structure</h4>
+        <div class="cb-sidebar-content"></div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<!-- ================== SCRIPT ================== -->
+<script type="module">
+
+  /* =================================================
+     SHARED UTILITIES
+     ================================================= */
+
+  const $ = (sel, root = document) => root.querySelector(sel);
+  const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+
+  // Custom confirm — works inside iframes / sandboxed contexts where window.confirm() may be blocked
+  function customConfirm(message, { dangerLabel = 'Confirm', cancelLabel = 'Cancel' } = {}) {
+    return new Promise(resolve => {
+      const overlay = document.createElement('div');
+      overlay.className = 'confirm-overlay';
+      overlay.innerHTML = `
+        <div class="confirm-card">
+          <div class="confirm-msg"></div>
+          <div class="confirm-actions">
+            <button class="cancel"></button>
+            <button class="danger"></button>
+          </div>
+        </div>`;
+      overlay.querySelector('.confirm-msg').textContent = message;
+      overlay.querySelector('.cancel').textContent = cancelLabel;
+      overlay.querySelector('.danger').textContent = dangerLabel;
+      document.body.appendChild(overlay);
+      const cleanup = (result) => { overlay.remove(); resolve(result); };
+      overlay.querySelector('.danger').addEventListener('click', () => cleanup(true));
+      overlay.querySelector('.cancel').addEventListener('click', () => cleanup(false));
+      overlay.querySelector('.cancel').focus();
+    });
+  }
+
+  function downloadText(text, filename) {
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function fmtTime(sec) {
+    sec = Math.max(0, Math.floor(sec));
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  }
+
+  function uid() { return 'id_' + Math.random().toString(36).slice(2, 10); }
+
+  /* =================================================
+     PANE MANAGER
+     ================================================= */
+
+  const panesRow = $('#panes-row');
+  const panesById = new Map();   // id -> { id, app, paneEl, instance }
+  const appByName = {};          // name -> { mount, unmount, title }
+
+  // Track active apps for launcher button highlighting
+  function syncLauncher() {
+    const open = new Set([...panesById.values()].map(p => p.app));
+    $$('.launcher-btn').forEach(btn => {
+      const app = btn.dataset.app;
+      btn.classList.toggle('active', open.has(app));
+    });
+  }
+
+  function openApp(appName) {
+    // If already open, do nothing (focus is implicit since panes are always visible)
+    for (const p of panesById.values()) {
+      if (p.app === appName) return p;
+    }
+
+    const def = appByName[appName];
+    if (!def) return null;
+
+    const tpl = $('#paneTemplate');
+    const paneEl = tpl.content.firstElementChild.cloneNode(true);
+    paneEl.dataset.app = appName;
+    paneEl.querySelector('.pane-title').textContent = def.title;
+
+    const id = uid();
+    paneEl.dataset.paneId = id;
+
+    paneEl.querySelector('.close-btn').addEventListener('click', () => closePane(id));
+
+    // Add splitter before this pane if it isn't the first
+    if (panesRow.children.length > 0) {
+      const splitter = document.createElement('div');
+      splitter.className = 'splitter';
+      panesRow.appendChild(splitter);
+      attachSplitter(splitter);
+    }
+    panesRow.appendChild(paneEl);
+
+    const body = paneEl.querySelector('.pane-body');
+    const instance = def.mount(body, paneEl, id);
+
+    panesById.set(id, { id, app: appName, paneEl, instance, def });
+    redistributePanes();
+    syncLauncher();
+    return panesById.get(id);
+  }
+
+  function closePane(id) {
+    const p = panesById.get(id);
+    if (!p) return;
+
+    // Cleanup app instance
+    try { p.def.unmount?.(p.instance); } catch (e) { console.warn(e); }
+
+    // Remove splitter on left side (or right, if it was the leftmost pane)
+    const prev = p.paneEl.previousElementSibling;
+    const next = p.paneEl.nextElementSibling;
+    if (prev?.classList.contains('splitter')) prev.remove();
+    else if (next?.classList.contains('splitter')) next.remove();
+    p.paneEl.remove();
+
+    panesById.delete(id);
+    redistributePanes();
+    syncLauncher();
+
+    if (panesById.size === 0) {
+      // No panes left — back to welcome
+      showWelcome();
+    }
+  }
+
+  function redistributePanes() {
+    // Equal-flex distribution after open/close
+    $$('.pane', panesRow).forEach(pane => {
+      pane.style.flex = '1 1 0';
+    });
+  }
+
+  function attachSplitter(splitter) {
+    splitter.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      const left = splitter.previousElementSibling;
+      const right = splitter.nextElementSibling;
+      if (!left || !right) return;
+      splitter.classList.add('dragging');
+
+      const startX = e.clientX;
+      const startLeftW = left.getBoundingClientRect().width;
+      const startRightW = right.getBoundingClientRect().width;
+      const totalW = startLeftW + startRightW;
+      const minW = 320;
+
+      const onMove = (ev) => {
+        const dx = ev.clientX - startX;
+        let newLeftW = startLeftW + dx;
+        let newRightW = startRightW - dx;
+        if (newLeftW < minW) { newLeftW = minW; newRightW = totalW - minW; }
+        if (newRightW < minW) { newRightW = minW; newLeftW = totalW - minW; }
+        left.style.flex = `0 0 ${newLeftW}px`;
+        right.style.flex = `0 0 ${newRightW}px`;
+      };
+      const onUp = () => {
+        splitter.classList.remove('dragging');
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+      };
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+  }
+
+  /* =================================================
+     APP: DANGEROUS WRITING
+     ================================================= */
+
+  appByName.dangerous = {
+    title: 'Dangerous Writing',
+    mount(body, paneEl, paneId) {
+      const tpl = $('#dangerousTemplate');
+      body.appendChild(tpl.content.cloneNode(true));
+      const root = body.querySelector('.dw-root');
+
+      const state = {
+        goalType: 'time',
+        timeMinutes: 5,
+        wordTarget: 250,
+        mode: 'normal',
+        running: false,
+        safeMode: false,
+        startedAt: 0,
+        lastKeyAt: 0,
+        pauseLimitMs: 5000,
+        timerHandle: null,
+        elapsedSec: 0,
+      };
+
+      const setupEl = root.querySelector('.dw-setup');
+      const writingEl = root.querySelector('.dw-writing');
+      const editor = root.querySelector('.dw-editor');
+      const goalLabel = root.querySelector('.dw-goal-label');
+      const statusLine = root.querySelector('.dw-status-line');
+      const progressFill = root.querySelector('.dw-progress-fill');
+      const progressTrack = root.querySelector('.dw-progress-track');
+      const failOverlay = root.querySelector('.dw-fail-overlay');
+      const winOverlay = root.querySelector('.dw-win-overlay');
+      const winSummary = root.querySelector('.dw-win-summary');
+      const copyBtn = root.querySelector('.dw-copy-btn');
+      const downloadBtn = root.querySelector('.dw-download-btn');
+
+      // Goal type toggle
+      const goalToggle = root.querySelector('.dw-goal-toggle');
+      goalToggle.addEventListener('click', e => {
+        if (e.target.tagName !== 'BUTTON') return;
+        $$('button', goalToggle).forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        state.goalType = e.target.dataset.mode;
+        root.querySelector('.dw-time-field').classList.toggle('hidden', state.goalType !== 'time');
+        root.querySelector('.dw-words-field').classList.toggle('hidden', state.goalType !== 'words');
+      });
+
+      // Mode toggle
+      const modeToggle = root.querySelector('.dw-mode-toggle');
+      modeToggle.addEventListener('click', e => {
+        if (e.target.tagName !== 'BUTTON') return;
+        $$('button', modeToggle).forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        state.mode = e.target.dataset.mode;
+      });
+
+      // Presets
+      function wirePresets(rowSel, customSel, onPick) {
+        const row = root.querySelector(rowSel);
+        const custom = root.querySelector(customSel);
+        row.addEventListener('click', e => {
+          if (e.target.tagName !== 'BUTTON') return;
+          $$('button', row).forEach(b => b.classList.remove('active'));
+          e.target.classList.add('active');
+          custom.value = '';
+          onPick(parseFloat(e.target.dataset.val));
+        });
+        custom.addEventListener('input', e => {
+          const v = parseFloat(e.target.value);
+          if (!isNaN(v) && v > 0) {
+            $$('button', row).forEach(b => b.classList.remove('active'));
+            onPick(v);
+          }
+        });
+      }
+      wirePresets('.dw-time-presets', '.dw-time-custom', v => state.timeMinutes = v);
+      wirePresets('.dw-word-presets', '.dw-word-custom', v => state.wordTarget = v);
+
+      function clearDangerClasses() {
+        paneEl.classList.remove('dw-danger-1', 'dw-danger-2', 'dw-danger-3', 'dw-danger-4');
+      }
+
+      function updateDanger(ms) {
+        clearDangerClasses();
+        if (ms < 1500) return;
+        if (ms < 2500) paneEl.classList.add('dw-danger-1');
+        else if (ms < 3500) paneEl.classList.add('dw-danger-2');
+        else if (ms < 4500) paneEl.classList.add('dw-danger-3');
+        else paneEl.classList.add('dw-danger-4');
+      }
+
+      function countWords(s) {
+        const t = s.trim();
+        return t ? t.split(/\s+/).length : 0;
+      }
+
+      function updateStatus() {
+        const words = countWords(editor.value);
+        if (state.goalType === 'time') {
+          const remaining = Math.max(0, state.timeMinutes * 60 - state.elapsedSec);
+          statusLine.textContent = `${fmtTime(remaining)} left · ${words} words`;
+        } else {
+          statusLine.textContent = `${fmtTime(state.elapsedSec)} · ${words} / ${state.wordTarget}`;
+        }
+      }
+
+      function updateProgress() {
+        let pct;
+        if (state.goalType === 'time') {
+          pct = Math.min(100, (state.elapsedSec / (state.timeMinutes * 60)) * 100);
+        } else {
+          pct = Math.min(100, (countWords(editor.value) / state.wordTarget) * 100);
+        }
+        progressFill.style.width = pct + '%';
+      }
+
+      function updateExportButtons() {
+        const hasText = editor.value.trim().length > 0;
+        const enabled = state.safeMode && hasText;
+        copyBtn.classList.toggle('dw-disabled', !enabled);
+        downloadBtn.classList.toggle('dw-disabled', !enabled);
+      }
+
+      function tick() {
+        if (!state.running) return;
+        const now = Date.now();
+        state.elapsedSec = (now - state.startedAt) / 1000;
+        const sincePause = now - state.lastKeyAt;
+        updateStatus();
+        updateProgress();
+        updateDanger(sincePause);
+        if (sincePause >= state.pauseLimitMs) { fail(); return; }
+        if (state.goalType === 'time' && state.elapsedSec >= state.timeMinutes * 60) win();
+      }
+
+      function startSession() {
+        setupEl.classList.add('hidden');
+        writingEl.classList.remove('hidden');
+        failOverlay.classList.add('hidden');
+        winOverlay.classList.add('hidden');
+        editor.value = '';
+        editor.classList.toggle('hardcore', state.mode === 'hardcore');
+        progressFill.style.width = '0%';
+        progressTrack.classList.remove('safe');
+        if (state.goalType === 'time') {
+          goalLabel.textContent = `— TIME · ${state.timeMinutes} MIN —`;
+        } else {
+          goalLabel.textContent = `— WORDS · ${state.wordTarget} —`;
+        }
+        state.running = true;
+        state.safeMode = false;
+        state.startedAt = Date.now();
+        state.lastKeyAt = Date.now();
+        state.elapsedSec = 0;
+        clearDangerClasses();
+        updateExportButtons();
+        editor.focus();
+        state.timerHandle = setInterval(tick, 200);
+      }
+
+      function fail() {
+        if (!state.running) return;
+        state.running = false;
+        clearInterval(state.timerHandle);
+        clearDangerClasses();
+        editor.value = '';
+        failOverlay.classList.remove('hidden');
+      }
+
+      function win() {
+        if (!state.running) return;
+        state.running = false;
+        state.safeMode = true;
+        clearInterval(state.timerHandle);
+        clearDangerClasses();
+        editor.classList.remove('hardcore');
+        const words = countWords(editor.value);
+        const elapsed = fmtTime(state.elapsedSec);
+        winSummary.innerHTML = `${words} words · ${elapsed}<br/>Your work is yours.`;
+        winOverlay.classList.remove('hidden');
+        progressTrack.classList.add('safe');
+        progressFill.style.width = '100%';
+        goalLabel.textContent = '— FREE WRITING —';
+        statusLine.textContent = `${words} words · goal reached in ${elapsed}`;
+        updateExportButtons();
+      }
+
+      function goHome() {
+        failOverlay.classList.add('hidden');
+        winOverlay.classList.add('hidden');
+        writingEl.classList.add('hidden');
+        setupEl.classList.remove('hidden');
+        clearDangerClasses();
+        state.safeMode = false;
+        progressTrack.classList.remove('safe');
+        editor.value = '';
+        updateExportButtons();
+      }
+
+      // Editor input — challenge mode
+      editor.addEventListener('input', () => {
+        updateExportButtons();
+        if (!state.running) {
+          // safe-mode live word count
+          if (state.safeMode) statusLine.textContent = `${countWords(editor.value)} words`;
+          return;
+        }
+        state.lastKeyAt = Date.now();
+        clearDangerClasses();
+        if (state.goalType === 'words' && countWords(editor.value) >= state.wordTarget) win();
+      });
+
+      // Anti-cheat: paste/drop swap with Shining quote
+      const DULL_BOY = 'All work and no play makes Jack a dull boy. ';
+      function shiningify(text) {
+        const words = Math.max(1, text.trim().split(/\s+/).length);
+        const reps = Math.max(3, Math.ceil(words / 10));
+        return DULL_BOY.repeat(reps).trim() + ' ';
+      }
+      function insertAtCursor(textarea, text) {
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        textarea.value = textarea.value.slice(0, start) + text + textarea.value.slice(end);
+        textarea.selectionStart = textarea.selectionEnd = start + text.length;
+        textarea.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      editor.addEventListener('paste', e => {
+        if (!state.running) return;
+        e.preventDefault();
+        const pasted = (e.clipboardData || window.clipboardData).getData('text') || '';
+        insertAtCursor(editor, shiningify(pasted));
+        state.lastKeyAt = Date.now();
+        clearDangerClasses();
+      });
+      editor.addEventListener('drop', e => {
+        if (!state.running) return;
+        e.preventDefault();
+        const dropped = e.dataTransfer?.getData('text') || '';
+        insertAtCursor(editor, shiningify(dropped));
+        state.lastKeyAt = Date.now();
+        clearDangerClasses();
+      });
+
+      // Buttons
+      root.querySelector('.dw-start-btn').addEventListener('click', startSession);
+      root.querySelector('.dw-fail-retry').addEventListener('click', startSession);
+      root.querySelector('.dw-fail-home').addEventListener('click', goHome);
+      root.querySelector('.dw-win-home').addEventListener('click', goHome);
+      root.querySelector('.dw-keep-writing').addEventListener('click', () => {
+        winOverlay.classList.add('hidden');
+        editor.focus();
+      });
+      root.querySelector('.dw-quit-btn').addEventListener('click', async () => {
+        if (state.running) {
+          const ok = await customConfirm('Quit this session? Your work will be lost.', { dangerLabel: 'Quit' });
+          if (!ok) return;
+        }
+        state.running = false; state.safeMode = false;
+        if (state.timerHandle) { clearInterval(state.timerHandle); state.timerHandle = null; }
+        clearDangerClasses();
+        editor.value = '';
+        goHome();
+      });
+
+      copyBtn.addEventListener('click', async () => {
+        if (copyBtn.classList.contains('dw-disabled')) return;
+        try {
+          await navigator.clipboard.writeText(editor.value);
+          const orig = copyBtn.textContent;
+          copyBtn.textContent = 'Copied ✓';
+          copyBtn.classList.add('copied-flash');
+          setTimeout(() => { copyBtn.textContent = orig; copyBtn.classList.remove('copied-flash'); }, 1500);
+        } catch {}
+      });
+      downloadBtn.addEventListener('click', () => {
+        if (downloadBtn.classList.contains('dw-disabled')) return;
+        const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        downloadText(editor.value, `dangerous-writing-${stamp}.txt`);
+        const orig = downloadBtn.textContent;
+        downloadBtn.textContent = 'Saved ✓';
+        downloadBtn.classList.add('copied-flash');
+        setTimeout(() => { downloadBtn.textContent = orig; downloadBtn.classList.remove('copied-flash'); }, 1500);
+      });
+
+      return {
+        cleanup() {
+          if (state.timerHandle) clearInterval(state.timerHandle);
+        }
+      };
+    },
+    unmount(instance) { instance.cleanup(); }
+  };
+
+  /* =================================================
+     APP: WHISPER / VOICE COMPOSER
+     Module-level singleton transcriber so closing/reopening
+     the pane doesn't re-download the model.
+     ================================================= */
+
+  let whisperPipelineModule = null;   // { pipeline, env } once loaded
+  let whisperTranscriber = null;      // pipeline instance
+  let whisperCurrentModel = null;
+
+  async function ensureWhisperModule() {
+    if (whisperPipelineModule) return whisperPipelineModule;
+    const mod = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.0.2');
+    mod.env.allowLocalModels = false;
+    mod.env.allowRemoteModels = true;
+    whisperPipelineModule = mod;
+    return mod;
+  }
+
+  appByName.whisper = {
+    title: 'Voice Composer',
+    mount(body, paneEl, paneId) {
+      const tpl = $('#whisperTemplate');
+      body.appendChild(tpl.content.cloneNode(true));
+      const root = body.querySelector('.wh-root');
+
+      const recBtn = root.querySelector('.wh-rec-btn');
+      const recLabel = root.querySelector('.wh-rec-label');
+      const recTimer = root.querySelector('.wh-rec-timer');
+      const transcript = root.querySelector('.wh-transcript');
+      const transStats = root.querySelector('.wh-trans-stats');
+      const statusPill = root.querySelector('.wh-status-pill');
+      const statusText = root.querySelector('.wh-status-text');
+      const modelSelect = root.querySelector('.wh-model-select');
+      const speakerName = root.querySelector('.wh-speaker-name');
+      const loadBar = root.querySelector('.wh-load-bar');
+      const loadBarFill = root.querySelector('.wh-load-bar-fill');
+      const loadBarText = root.querySelector('.wh-load-bar-text');
+      const errBanner = root.querySelector('.wh-err-banner');
+      const meterBars = root.querySelectorAll('.wh-meter .bar');
+      const editToggle = root.querySelector('.wh-edit-toggle');
+      const copyBtn = root.querySelector('.wh-copy-btn');
+      const downloadBtn = root.querySelector('.wh-download-btn');
+      const clearBtn = root.querySelector('.wh-clear-btn');
+
+      let mediaStream = null;
+      let mediaRecorder = null;
+      let audioChunks = [];
+      let audioContext = null;
+      let analyser = null;
+      let meterRAF = null;
+      let recStartedAt = 0;
+      let recTimerInt = null;
+      let isRecording = false;
+
+      function setStatus(state, text) {
+        statusPill.classList.remove('ready', 'loading', 'error');
+        if (state) statusPill.classList.add(state);
+        statusText.textContent = text;
+      }
+      function showErr(msg) { errBanner.textContent = msg; errBanner.classList.remove('hidden'); }
+      function hideErr() { errBanner.classList.add('hidden'); }
+
+      // If a model is already loaded suite-wide, reflect that
+      if (whisperTranscriber && whisperCurrentModel) {
+        setStatus('ready', `ready · ${whisperCurrentModel.split('/')[1]}`);
+        recLabel.textContent = 'click to record';
+        modelSelect.value = whisperCurrentModel;
+        recBtn.disabled = false;
+      } else {
+        setStatus('', 'click record to load model');
+        recLabel.textContent = 'click to load model & start';
+        recBtn.disabled = false;
+      }
+
+      async function ensureModel() {
+        const wanted = modelSelect.value;
+        if (whisperTranscriber && whisperCurrentModel === wanted) return whisperTranscriber;
+        whisperTranscriber = null;
+        whisperCurrentModel = wanted;
+        setStatus('loading', `loading ${wanted.split('/')[1]}…`);
+        loadBar.classList.remove('hidden');
+        loadBarFill.style.width = '0%';
+        loadBarText.textContent = 'preparing…';
+        recBtn.disabled = true;
+        try {
+          const { pipeline } = await ensureWhisperModule();
+          whisperTranscriber = await pipeline('automatic-speech-recognition', wanted, {
+            progress_callback: (data) => {
+              if (data.status === 'progress' && typeof data.progress === 'number') {
+                loadBarFill.style.width = data.progress.toFixed(1) + '%';
+                const loaded = data.loaded ? (data.loaded / 1024 / 1024).toFixed(1) : '?';
+                const total = data.total ? (data.total / 1024 / 1024).toFixed(1) : '?';
+                loadBarText.textContent = `${data.file || 'model'} · ${loaded}/${total} MB`;
+              } else if (data.status === 'ready' || data.status === 'done') {
+                loadBarFill.style.width = '100%';
+                loadBarText.textContent = 'ready';
+              } else if (data.status === 'initiate') {
+                loadBarText.textContent = `fetching ${data.file || ''}`;
+              }
+            },
+          });
+          setStatus('ready', `ready · ${wanted.split('/')[1]}`);
+          recLabel.textContent = 'click to record';
+          recBtn.disabled = false;
+          setTimeout(() => loadBar.classList.add('hidden'), 600);
+          return whisperTranscriber;
+        } catch (e) {
+          console.error(e);
+          setStatus('error', 'model failed to load');
+          showErr('Could not load the model. Check internet (first load) and try again. ' + (e.message || e));
+          loadBar.classList.add('hidden');
+          throw e;
+        }
+      }
+
+      modelSelect.addEventListener('change', () => {
+        if (isRecording) return;
+        ensureModel().catch(() => {});
+      });
+
+      async function startRecording() {
+        hideErr();
+        try { await ensureModel(); } catch { return; }
+        try {
+          mediaStream = await navigator.mediaDevices.getUserMedia({
+            audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+          });
+        } catch {
+          showErr('Microphone access denied or unavailable. Check browser permissions.');
+          return;
+        }
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const source = audioContext.createMediaStreamSource(mediaStream);
+        analyser = audioContext.createAnalyser();
+        analyser.fftSize = 256;
+        source.connect(analyser);
+        runMeter();
+
+        audioChunks = [];
+        mediaRecorder = new MediaRecorder(mediaStream);
+        mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+        mediaRecorder.onstop = handleStop;
+        mediaRecorder.start();
+
+        isRecording = true;
+        recBtn.classList.add('recording');
+        recLabel.textContent = 'recording · click to stop';
+        recStartedAt = Date.now();
+        recTimerInt = setInterval(() => {
+          recTimer.textContent = fmtTime((Date.now() - recStartedAt) / 1000);
+        }, 250);
+      }
+
+      function stopRecording() {
+        if (!mediaRecorder) return;
+        mediaRecorder.stop();
+        isRecording = false;
+        recBtn.classList.remove('recording');
+        recBtn.disabled = true;
+        recLabel.textContent = 'transcribing…';
+        clearInterval(recTimerInt);
+        cancelAnimationFrame(meterRAF);
+        meterBars.forEach(b => b.style.height = '4px');
+      }
+
+      async function handleStop() {
+        mediaStream.getTracks().forEach(t => t.stop());
+        if (audioContext) { audioContext.close(); audioContext = null; }
+        const blob = new Blob(audioChunks, { type: 'audio/webm' });
+        const arrayBuffer = await blob.arrayBuffer();
+        try {
+          const samples = await decodeToWhisperSamples(arrayBuffer);
+          transcript.classList.remove('empty');
+          transcript.classList.add('transcribing');
+          transcript.textContent = '';
+          const result = await whisperTranscriber(samples, { chunk_length_s: 30, stride_length_s: 5 });
+          transcript.classList.remove('transcribing');
+          const text = (result.text || '').trim();
+          transcript.textContent = text || '(no speech detected)';
+          updateStats();
+          enableExports(text.length > 0);
+          recBtn.disabled = false;
+          recLabel.textContent = 'click to record again';
+          setStatus('ready', `ready · ${whisperCurrentModel.split('/')[1]}`);
+        } catch (e) {
+          console.error(e);
+          transcript.classList.remove('transcribing');
+          showErr('Transcription failed: ' + (e.message || e));
+          recBtn.disabled = false;
+          recLabel.textContent = 'click to try again';
+        }
+      }
+
+      async function decodeToWhisperSamples(arrayBuffer) {
+        const tmpCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const decoded = await tmpCtx.decodeAudioData(arrayBuffer.slice(0));
+        tmpCtx.close();
+        const targetSampleRate = 16000;
+        const channelData = decoded.numberOfChannels > 1 ? mixToMono(decoded) : decoded.getChannelData(0);
+        if (decoded.sampleRate === targetSampleRate) return channelData;
+        const offline = new OfflineAudioContext(1,
+          Math.ceil(channelData.length * targetSampleRate / decoded.sampleRate),
+          targetSampleRate);
+        const buf = offline.createBuffer(1, channelData.length, decoded.sampleRate);
+        buf.getChannelData(0).set(channelData);
+        const src = offline.createBufferSource();
+        src.buffer = buf;
+        src.connect(offline.destination);
+        src.start();
+        const rendered = await offline.startRendering();
+        return rendered.getChannelData(0);
+      }
+      function mixToMono(audioBuffer) {
+        const len = audioBuffer.length;
+        const out = new Float32Array(len);
+        const numCh = audioBuffer.numberOfChannels;
+        for (let ch = 0; ch < numCh; ch++) {
+          const data = audioBuffer.getChannelData(ch);
+          for (let i = 0; i < len; i++) out[i] += data[i];
+        }
+        for (let i = 0; i < len; i++) out[i] /= numCh;
+        return out;
+      }
+
+      function runMeter() {
+        if (!analyser) return;
+        const data = new Uint8Array(analyser.frequencyBinCount);
+        analyser.getByteFrequencyData(data);
+        const step = Math.floor(data.length / meterBars.length);
+        meterBars.forEach((bar, i) => {
+          const v = data[i * step] || 0;
+          const h = 4 + (v / 255) * 20;
+          bar.style.height = h + 'px';
+        });
+        meterRAF = requestAnimationFrame(runMeter);
+      }
+
+      recBtn.addEventListener('click', () => {
+        if (isRecording) stopRecording(); else startRecording();
+      });
+
+      function updateStats() {
+        const text = transcript.textContent.trim();
+        const words = text ? text.split(/\s+/).length : 0;
+        const elapsed = recStartedAt
+          ? fmtTime((Date.now() - recStartedAt) / 1000)
+          : '—';
+        transStats.textContent = `${elapsed} · ${words} word${words === 1 ? '' : 's'}`;
+      }
+      function enableExports(en) {
+        copyBtn.disabled = !en;
+        downloadBtn.disabled = !en;
+        clearBtn.disabled = !en;
+        editToggle.disabled = !en;
+      }
+      editToggle.addEventListener('click', () => {
+        const editing = transcript.getAttribute('contenteditable') === 'true';
+        transcript.setAttribute('contenteditable', editing ? 'false' : 'true');
+        editToggle.textContent = editing ? 'Edit' : 'Done';
+        if (!editing) transcript.focus();
+      });
+      transcript.addEventListener('input', updateStats);
+      copyBtn.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(transcript.textContent);
+          const orig = copyBtn.textContent;
+          copyBtn.textContent = 'Copied ✓';
+          setTimeout(() => copyBtn.textContent = orig, 1500);
+        } catch { showErr('Could not copy — try Download instead.'); }
+      });
+      downloadBtn.addEventListener('click', () => {
+        const speaker = (speakerName.value || 'speaker').trim().replace(/[^\w\-]+/g, '_');
+        const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 16);
+        downloadText(transcript.textContent, `dictation_${speaker}_${stamp}.txt`);
+        const orig = downloadBtn.textContent;
+        downloadBtn.textContent = 'Saved ✓';
+        setTimeout(() => downloadBtn.textContent = orig, 1500);
+      });
+      clearBtn.addEventListener('click', async () => {
+        if (!await customConfirm('Clear the transcript? This cannot be undone.', { dangerLabel: 'Clear' })) return;
+        transcript.textContent = '';
+        transcript.classList.add('empty');
+        transcript.setAttribute('contenteditable', 'false');
+        editToggle.textContent = 'Edit';
+        enableExports(false);
+        updateStats();
+      });
+
+      if (!window.isSecureContext && location.protocol !== 'file:') {
+        showErr('This page must be served over HTTPS (or opened as a local file) for microphone access.');
+      }
+      if (!navigator.mediaDevices?.getUserMedia) {
+        showErr('Your browser does not support microphone recording.');
+        recBtn.disabled = true;
+      }
+
+      return {
+        cleanup() {
+          if (isRecording) try { mediaRecorder?.stop(); } catch {}
+          if (mediaStream) mediaStream.getTracks().forEach(t => t.stop());
+          if (audioContext) try { audioContext.close(); } catch {}
+          if (recTimerInt) clearInterval(recTimerInt);
+          if (meterRAF) cancelAnimationFrame(meterRAF);
+          // Keep the model loaded — singleton at module scope.
+        }
+      };
+    },
+    unmount(instance) { instance.cleanup(); }
+  };
+
+  /* =================================================
+     APP: CORKBOARD
+     Persists to localStorage. Cards positioned freely;
+     "lanes" mode draws horizontal rows for the chosen
+     structure; "reference" mode shows a sidebar.
+     ================================================= */
+
+  const STRUCTURES = {
+    none: {
+      name: 'No structure',
+      beats: [],
+    },
+    'three-act': {
+      name: 'Three-Act Structure',
+      beats: [
+        { name: 'Act I — Setup', desc: 'Establish character, world, and the inciting incident.' },
+        { name: 'Act II — Confrontation', desc: 'Rising action and complications. The protagonist faces obstacles.' },
+        { name: 'Act III — Resolution', desc: 'Climax and denouement. The story\'s questions are answered.' },
+      ],
+    },
+    'save-the-cat': {
+      name: 'Save the Cat (Snyder)',
+      beats: [
+        { name: 'Opening Image', desc: 'A snapshot of the story\'s "before."' },
+        { name: 'Theme Stated', desc: 'A character (often not the hero) hints at the story\'s theme.' },
+        { name: 'Setup', desc: 'Introduce the hero, their world, and what\'s broken.' },
+        { name: 'Catalyst', desc: 'Something happens that forces the hero out of their stasis.' },
+        { name: 'Debate', desc: 'Should I go? Internal hesitation.' },
+        { name: 'Break into Two', desc: 'The hero commits and enters the new world.' },
+        { name: 'B Story', desc: 'Often a relationship — the heart of the theme.' },
+        { name: 'Fun and Games', desc: 'The "promise of the premise." Why we came to the story.' },
+        { name: 'Midpoint', desc: 'A false victory or false defeat. Stakes raise.' },
+        { name: 'Bad Guys Close In', desc: 'External and internal pressures intensify.' },
+        { name: 'All Is Lost', desc: 'The lowest point. Often a death (literal or symbolic).' },
+        { name: 'Dark Night of the Soul', desc: 'The hero sits with the loss and finds the answer.' },
+        { name: 'Break into Three', desc: 'A new plan. The hero acts on what they\'ve learned.' },
+        { name: 'Finale', desc: 'The hero confronts the antagonist and triumphs.' },
+        { name: 'Final Image', desc: 'The "after" snapshot. Mirror of the opening.' },
+      ],
+    },
+    mckee: {
+      name: 'McKee\'s Five-Part Story',
+      beats: [
+        { name: 'Inciting Incident', desc: 'The event that knocks the protagonist\'s life out of balance.' },
+        { name: 'Progressive Complications', desc: 'Obstacles escalate; choices become harder.' },
+        { name: 'Crisis', desc: 'The protagonist\'s ultimate dilemma — irreconcilable goods or lesser evils.' },
+        { name: 'Climax', desc: 'The decision and its consequence. The story\'s emotional peak.' },
+        { name: 'Resolution', desc: 'A brief closing — the new equilibrium.' },
+      ],
+    },
+    'heros-journey': {
+      name: 'Hero\'s Journey (Vogler)',
+      beats: [
+        { name: 'Ordinary World', desc: 'Where the hero begins.' },
+        { name: 'Call to Adventure', desc: 'Something disrupts the ordinary.' },
+        { name: 'Refusal of the Call', desc: 'Hesitation, fear, or duty pulls the hero back.' },
+        { name: 'Meeting the Mentor', desc: 'A guide appears with knowledge or tools.' },
+        { name: 'Crossing the Threshold', desc: 'The hero commits to the journey.' },
+        { name: 'Tests, Allies, Enemies', desc: 'The hero learns the rules of the new world.' },
+        { name: 'Approach', desc: 'Preparation for the central ordeal.' },
+        { name: 'Ordeal', desc: 'The hero faces death or its symbolic equivalent.' },
+        { name: 'Reward', desc: 'The hero gains something — knowledge, treasure, reconciliation.' },
+        { name: 'The Road Back', desc: 'The journey home begins; consequences pursue.' },
+        { name: 'Resurrection', desc: 'A final test. The hero is transformed.' },
+        { name: 'Return with the Elixir', desc: 'The hero brings something back that benefits the ordinary world.' },
+      ],
+    },
+    'five-paragraph-essay': {
+      name: 'Five-Paragraph Essay',
+      beats: [
+        { name: 'Introduction', desc: 'Hook + thesis. State your argument clearly.' },
+        { name: 'Body Paragraph 1', desc: 'First supporting point with evidence.' },
+        { name: 'Body Paragraph 2', desc: 'Second supporting point with evidence.' },
+        { name: 'Body Paragraph 3', desc: 'Third supporting point — often counter-argument or complication.' },
+        { name: 'Conclusion', desc: 'Restate thesis with new perspective; broader implication.' },
+      ],
+    },
+    peel: {
+      name: 'PEEL Paragraph',
+      beats: [
+        { name: 'Point', desc: 'State the main idea of the paragraph in one sentence.' },
+        { name: 'Evidence', desc: 'Quote, statistic, or example that supports the point.' },
+        { name: 'Explanation', desc: 'Analyse: why does this evidence support the point?' },
+        { name: 'Link', desc: 'Connect back to the thesis or to the next paragraph.' },
+      ],
+    },
+  };
+
+  const CB_STORAGE_KEY = 'writingsuite_corkboard_v1';
+
+  function loadCorkboardState() {
+    try {
+      const raw = localStorage.getItem(CB_STORAGE_KEY);
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch { return null; }
+  }
+  function saveCorkboardState(state) {
+    try {
+      localStorage.setItem(CB_STORAGE_KEY, JSON.stringify(state));
+    } catch (e) { console.warn('Corkboard save failed:', e); }
+  }
+
+  appByName.corkboard = {
+    title: 'Corkboard',
+    mount(body, paneEl, paneId) {
+      const tpl = $('#corkboardTemplate');
+      body.appendChild(tpl.content.cloneNode(true));
+      const root = body.querySelector('.cb-root');
+
+      const board = root.querySelector('.cb-board');
+      const lanesEl = root.querySelector('.cb-lanes');
+      const sidebar = root.querySelector('.cb-sidebar');
+      const sidebarContent = root.querySelector('.cb-sidebar-content');
+      const structureSelect = root.querySelector('.cb-structure-select');
+      const toggleLanesBtn = root.querySelector('.cb-toggle-lanes');
+      const toggleSidebarBtn = root.querySelector('.cb-toggle-sidebar');
+      const cardCountEl = root.querySelector('.cb-card-count');
+      const stage = root.querySelector('.cb-stage');
+
+      // Default state
+      const persisted = loadCorkboardState();
+      const state = persisted || {
+        cards: [],
+        structure: 'none',
+        lanesOn: false,
+        sidebarOn: false,
+        customStructures: {},
+        scroll: { x: 0, y: 0 },
+      };
+
+      // Save (debounced)
+      let saveTimer = null;
+      function persist() {
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(() => saveCorkboardState(state), 200);
+      }
+
+      // ---- structure dropdown ----
+      function rebuildStructureSelect() {
+        structureSelect.innerHTML = '';
+        for (const [key, def] of Object.entries(STRUCTURES)) {
+          const opt = document.createElement('option');
+          opt.value = key;
+          opt.textContent = def.name;
+          structureSelect.appendChild(opt);
+        }
+        // custom structures
+        for (const [key, def] of Object.entries(state.customStructures)) {
+          const opt = document.createElement('option');
+          opt.value = 'custom:' + key;
+          opt.textContent = '★ ' + def.name;
+          structureSelect.appendChild(opt);
+        }
+        // create new
+        const opt = document.createElement('option');
+        opt.value = '__new__';
+        opt.textContent = '+ New custom…';
+        structureSelect.appendChild(opt);
+
+        structureSelect.value = state.structure;
+      }
+      rebuildStructureSelect();
+
+      function getStructure() {
+        if (state.structure.startsWith('custom:')) {
+          const key = state.structure.slice(7);
+          return state.customStructures[key] || STRUCTURES.none;
+        }
+        return STRUCTURES[state.structure] || STRUCTURES.none;
+      }
+
+      structureSelect.addEventListener('change', () => {
+        if (structureSelect.value === '__new__') {
+          structureSelect.value = state.structure;
+          openCustomStructureModal();
+          return;
+        }
+        state.structure = structureSelect.value;
+        renderLanes();
+        renderSidebar();
+        persist();
+      });
+
+      // ---- lanes ----
+      function renderLanes() {
+        lanesEl.innerHTML = '';
+        const struct = getStructure();
+        if (!struct.beats.length) {
+          lanesEl.classList.add('hidden');
+          return;
+        }
+        struct.beats.forEach((beat, i) => {
+          const lane = document.createElement('div');
+          lane.className = 'cb-lane';
+          lane.innerHTML = `<span class="cb-lane-label">${i + 1}. ${escapeHTML(beat.name)}</span>`;
+          lanesEl.appendChild(lane);
+        });
+        lanesEl.classList.toggle('hidden', !state.lanesOn);
+      }
+
+      function escapeHTML(s) {
+        return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+      }
+
+      // ---- sidebar ----
+      function renderSidebar() {
+        const struct = getStructure();
+        sidebarContent.innerHTML = '';
+        if (!struct.beats.length) {
+          sidebarContent.innerHTML = '<p style="font-style:italic;color:var(--ink-soft);font-size:0.85rem;">No structure selected.</p>';
+        } else {
+          struct.beats.forEach((beat, i) => {
+            const div = document.createElement('div');
+            div.className = 'beat';
+            div.innerHTML = `<span class="num">${i + 1}.</span><span class="name">${escapeHTML(beat.name)}</span><span class="desc">${escapeHTML(beat.desc || '')}</span>`;
+            sidebarContent.appendChild(div);
+          });
+        }
+        sidebar.classList.toggle('hidden', !state.sidebarOn);
+      }
+
+      toggleLanesBtn.addEventListener('click', () => {
+        state.lanesOn = !state.lanesOn;
+        toggleLanesBtn.classList.toggle('active', state.lanesOn);
+        renderLanes();
+        persist();
+      });
+      toggleSidebarBtn.addEventListener('click', () => {
+        state.sidebarOn = !state.sidebarOn;
+        toggleSidebarBtn.classList.toggle('active', state.sidebarOn);
+        renderSidebar();
+        persist();
+      });
+
+      // restore toggle states
+      toggleLanesBtn.classList.toggle('active', state.lanesOn);
+      toggleSidebarBtn.classList.toggle('active', state.sidebarOn);
+      renderLanes();
+      renderSidebar();
+
+      // ---- cards ----
+      function makeCard(card) {
+        const el = document.createElement('div');
+        el.className = 'cb-card';
+        el.dataset.id = card.id;
+        el.dataset.color = card.color || 'yellow';
+        el.style.left = card.x + 'px';
+        el.style.top = card.y + 'px';
+        el.innerHTML = `
+          <div class="cb-card-toolbar">
+            <button class="cb-card-color" title="Change colour">●</button>
+            <button class="cb-card-delete" title="Delete">×</button>
+          </div>
+          <div class="cb-color-picker">
+            ${['yellow','pink','blue','green','orange','purple'].map(c =>
+              `<div class="cb-color-swatch" data-color="${c}" style="background:var(--note-${c})"></div>`
+            ).join('')}
+          </div>
+          <div class="cb-card-text" contenteditable="true" spellcheck="true"></div>
+        `;
+        const textEl = el.querySelector('.cb-card-text');
+        textEl.textContent = card.text || '';
+        if (!card.text) textEl.classList.add('empty');
+
+        // edit
+        textEl.addEventListener('input', () => {
+          card.text = textEl.textContent;
+          textEl.classList.toggle('empty', !card.text);
+          persist();
+        });
+        textEl.addEventListener('focus', () => textEl.classList.remove('empty'));
+        textEl.addEventListener('blur', () => {
+          textEl.classList.toggle('empty', !textEl.textContent);
+        });
+
+        // delete
+        el.querySelector('.cb-card-delete').addEventListener('click', async () => {
+          if (card.text && card.text.trim().length > 20) {
+            const ok = await customConfirm('Delete this card?', { dangerLabel: 'Delete' });
+            if (!ok) return;
+          }
+          state.cards = state.cards.filter(c => c.id !== card.id);
+          el.remove();
+          updateCardCount();
+          persist();
+        });
+
+        // color picker toggle
+        el.querySelector('.cb-card-color').addEventListener('click', (e) => {
+          e.stopPropagation();
+          el.classList.toggle('color-open');
+        });
+        el.querySelectorAll('.cb-color-swatch').forEach(sw => {
+          sw.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const c = sw.dataset.color;
+            card.color = c;
+            el.dataset.color = c;
+            el.classList.remove('color-open');
+            persist();
+          });
+        });
+
+        // drag — only when grabbing card body, not when editing text
+        let dragState = null;
+        el.addEventListener('mousedown', (e) => {
+          if (e.target.classList.contains('cb-card-text')) return;
+          if (e.target.closest('.cb-card-toolbar') || e.target.closest('.cb-color-picker')) return;
+          e.preventDefault();
+          el.classList.add('dragging');
+          const rect = el.getBoundingClientRect();
+          dragState = {
+            offX: e.clientX - rect.left,
+            offY: e.clientY - rect.top,
+          };
+          const onMove = (ev) => {
+            if (!dragState) return;
+            const stageRect = stage.getBoundingClientRect();
+            const x = ev.clientX - stageRect.left + stage.scrollLeft - dragState.offX;
+            const y = ev.clientY - stageRect.top + stage.scrollTop - dragState.offY;
+            const cx = Math.max(0, Math.min(board.offsetWidth - el.offsetWidth, x));
+            const cy = Math.max(0, Math.min(board.offsetHeight - el.offsetHeight, y));
+            el.style.left = cx + 'px';
+            el.style.top = cy + 'px';
+            card.x = cx;
+            card.y = cy;
+          };
+          const onUp = () => {
+            el.classList.remove('dragging');
+            dragState = null;
+            persist();
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onUp);
+          };
+          document.addEventListener('mousemove', onMove);
+          document.addEventListener('mouseup', onUp);
+        });
+
+        return el;
+      }
+
+      function addCard(opts = {}) {
+        const card = {
+          id: uid(),
+          x: opts.x ?? (200 + state.cards.length * 20) % 1000 + 50,
+          y: opts.y ?? (120 + state.cards.length * 20) % 600 + 60,
+          text: opts.text || '',
+          color: opts.color || 'yellow',
+        };
+        state.cards.push(card);
+        board.appendChild(makeCard(card));
+        updateCardCount();
+        persist();
+        return card;
+      }
+
+      function updateCardCount() {
+        const n = state.cards.length;
+        cardCountEl.textContent = `${n} card${n === 1 ? '' : 's'}`;
+      }
+
+      // restore cards
+      state.cards.forEach(c => board.appendChild(makeCard(c)));
+      updateCardCount();
+
+      // double-click empty board to add
+      stage.addEventListener('dblclick', (e) => {
+        if (e.target !== stage && e.target !== board && !e.target.classList.contains('cb-lane')) return;
+        const stageRect = stage.getBoundingClientRect();
+        const x = e.clientX - stageRect.left + stage.scrollLeft - 70;
+        const y = e.clientY - stageRect.top + stage.scrollTop - 30;
+        const card = addCard({ x, y });
+        // focus the new card
+        const el = board.querySelector(`.cb-card[data-id="${card.id}"] .cb-card-text`);
+        if (el) el.focus();
+      });
+
+      // close color picker on outside click
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.cb-card')) {
+          $$('.cb-card.color-open', root).forEach(c => c.classList.remove('color-open'));
+        }
+      });
+
+      // toolbar buttons
+      root.querySelector('.cb-add-card').addEventListener('click', () => {
+        const stageRect = stage.getBoundingClientRect();
+        const x = stage.scrollLeft + stageRect.width / 2 - 70;
+        const y = stage.scrollTop + 100;
+        const card = addCard({ x, y });
+        const el = board.querySelector(`.cb-card[data-id="${card.id}"] .cb-card-text`);
+        if (el) el.focus();
+      });
+
+      root.querySelector('.cb-clear').addEventListener('click', async () => {
+        if (state.cards.length === 0) return;
+        const ok = await customConfirm(`Remove all ${state.cards.length} card${state.cards.length === 1 ? '' : 's'}? This cannot be undone.`, { dangerLabel: 'Clear all' });
+        if (!ok) return;
+        state.cards = [];
+        $$('.cb-card', board).forEach(c => c.remove());
+        updateCardCount();
+        persist();
+      });
+
+      // ---- custom structure modal ----
+      function openCustomStructureModal(existingKey = null) {
+        const existing = existingKey ? state.customStructures[existingKey] : null;
+        const modal = document.createElement('div');
+        modal.className = 'cb-modal';
+        modal.innerHTML = `
+          <div class="cb-modal-card">
+            <h3>${existing ? 'Edit' : 'Create'} custom structure</h3>
+            <div class="form-row">
+              <label>Name</label>
+              <input type="text" class="cs-name" placeholder="e.g. My Essay Plan" />
+            </div>
+            <div class="form-row">
+              <label>Beats / sections</label>
+              <textarea class="cs-beats" placeholder="One per line. Format:&#10;Beat name :: Optional description&#10;&#10;Example:&#10;Hook :: Open with a striking image or question&#10;Thesis :: State your argument clearly&#10;Evidence :: Provide your strongest support"></textarea>
+              <div class="hint">One beat per line. Use "Name :: description" to add a description.</div>
+            </div>
+            <div class="cb-modal-actions">
+              <button class="cs-cancel">Cancel</button>
+              ${existing ? '<button class="cs-delete" style="background:#fdecec;border-color:var(--accent-dangerous);color:#7a1818">Delete</button>' : ''}
+              <button class="primary cs-save">Save</button>
+            </div>
+          </div>`;
+        document.body.appendChild(modal);
+
+        const nameInput = modal.querySelector('.cs-name');
+        const beatsInput = modal.querySelector('.cs-beats');
+        if (existing) {
+          nameInput.value = existing.name;
+          beatsInput.value = existing.beats.map(b => b.desc ? `${b.name} :: ${b.desc}` : b.name).join('\n');
+        }
+        nameInput.focus();
+
+        modal.querySelector('.cs-cancel').addEventListener('click', () => modal.remove());
+        modal.querySelector('.cs-save').addEventListener('click', () => {
+          const name = nameInput.value.trim();
+          const lines = beatsInput.value.split('\n').map(l => l.trim()).filter(Boolean);
+          if (!name) { nameInput.focus(); return; }
+          if (lines.length === 0) { beatsInput.focus(); return; }
+          const beats = lines.map(l => {
+            const idx = l.indexOf('::');
+            if (idx === -1) return { name: l, desc: '' };
+            return { name: l.slice(0, idx).trim(), desc: l.slice(idx + 2).trim() };
+          });
+          const key = existingKey || uid();
+          state.customStructures[key] = { name, beats };
+          state.structure = 'custom:' + key;
+          persist();
+          rebuildStructureSelect();
+          renderLanes();
+          renderSidebar();
+          modal.remove();
+        });
+        if (existing) {
+          modal.querySelector('.cs-delete').addEventListener('click', async () => {
+            const ok = await customConfirm(`Delete "${existing.name}"?`, { dangerLabel: 'Delete' });
+            if (!ok) return;
+            delete state.customStructures[existingKey];
+            if (state.structure === 'custom:' + existingKey) state.structure = 'none';
+            persist();
+            rebuildStructureSelect();
+            renderLanes();
+            renderSidebar();
+            modal.remove();
+          });
+        }
+      }
+
+      // Allow editing custom structure: when one is selected, show an edit affordance
+      // (simple: add an "Edit structure" button when a custom structure is active)
+      const editStructBtn = document.createElement('button');
+      editStructBtn.textContent = 'Edit';
+      editStructBtn.style.display = 'none';
+      editStructBtn.title = 'Edit this custom structure';
+      structureSelect.parentElement.insertBefore(editStructBtn, toggleLanesBtn);
+      function refreshEditButton() {
+        editStructBtn.style.display = state.structure.startsWith('custom:') ? '' : 'none';
+      }
+      refreshEditButton();
+      structureSelect.addEventListener('change', refreshEditButton);
+      editStructBtn.addEventListener('click', () => {
+        if (state.structure.startsWith('custom:')) {
+          openCustomStructureModal(state.structure.slice(7));
+        }
+      });
+
+      // restore scroll
+      requestAnimationFrame(() => {
+        if (state.scroll) {
+          stage.scrollLeft = state.scroll.x || 0;
+          stage.scrollTop = state.scroll.y || 0;
+        }
+      });
+      stage.addEventListener('scroll', () => {
+        state.scroll = { x: stage.scrollLeft, y: stage.scrollTop };
+        persist();
+      });
+
+      return {
+        cleanup() {
+          clearTimeout(saveTimer);
+          saveCorkboardState(state);
+        }
+      };
+    },
+    unmount(instance) { instance.cleanup(); }
+  };
+
+  /* =================================================
+     WELCOME / BOOT
+     ================================================= */
+
+  const welcomeEl = $('#welcome');
+  const workspaceEl = $('#workspace');
+
+  function showWelcome() {
+    workspaceEl.classList.add('hidden');
+    welcomeEl.classList.remove('hidden');
+  }
+  function showWorkspace() {
+    welcomeEl.classList.add('hidden');
+    workspaceEl.classList.remove('hidden');
+  }
+
+  // Welcome cards
+  $$('.welcome-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const app = card.dataset.app;
+      showWorkspace();
+      openApp(app);
+    });
+  });
+
+  // Suite-bar launchers
+  $$('.launcher-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const app = btn.dataset.app;
+      // If already open, close it; otherwise open.
+      const existing = [...panesById.values()].find(p => p.app === app);
+      if (existing) closePane(existing.id);
+      else openApp(app);
+    });
+  });
+
+  // Brand → welcome (only when nothing critical going on)
+  $('#brandBtn').addEventListener('click', async () => {
+    if (panesById.size > 0) {
+      const ok = await customConfirm('Return to the welcome screen? Open panes will be closed.', { dangerLabel: 'Return' });
+      if (!ok) return;
+      // Close all panes
+      [...panesById.keys()].forEach(id => closePane(id));
+    }
+    showWelcome();
+  });
+
+</script>
+</body>
+</html>
